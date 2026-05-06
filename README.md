@@ -1,109 +1,57 @@
-# Sentra v2
+# Sentrazone
 
-Sentra is a lightweight, secure WireGuard management system. Version 2 introduces a decoupled architecture with a local event bus for efficient status updates and improved scalability.
+Sentrazone is a lightweight WireGuard VPN control plane with a real-time dashboard. It monitors multiple WireGuard servers, tracks system metrics, manages VPN peers, and routes traffic through residential proxies per server.
 
 ## Architecture
 
-Sentra v2 follows a modular architecture:
+- **Control Plane** (`cmd/control`) — central API server, SQLite storage, WebSocket hub, JWT auth
+- **Agent** (`cmd/agent`) — runs inside each WireGuard container, reports metrics every 10s
+- **Event Bus** — in-memory pub/sub decoupling agents from the control plane
+- **Status Cache** — serves live status to the dashboard without blocking on WireGuard calls
 
--   **Control Plane**: The central management server.
--   **Agent**: A lightweight component that monitors WireGuard interface status and system metrics.
--   **Event Bus**: A local in-memory message bus that decouples the Agent from the Control Plane.
--   **Status Cache**: An in-memory cache that provides instant status updates to the API without blocking on WireGuard kernel calls.
+## Features
 
-### Key Components
-
--   **Control Plane (`cmd/control`)**:
-    -   Manages the API, database, and WebSocket connections.
-    -   Initializes the `EventBus` and `StatusCache`.
-    -   Embeds the Agent for local monitoring.
--   **Agent (`internal/agent`)**:
-    -   Periodically polls WireGuard interface status and system metrics (every 10s).
-    -   Publishes `StatusEvent` to the `EventBus` or via HTTP to a remote Control Plane.
--   **API (`internal/api`)**:
-    -   Serves status information from the `StatusCache`.
-    -   Authentication via JWT.
-    -   Real-time updates via WebSocket.
--   **Storage**: SQLite (via `modernc.org/sqlite`).
+- Real-time dashboard with WebSocket live updates
+- System metrics — CPU, memory, disk, load, ping latency, bandwidth
+- WireGuard peer management via wg-easy API (create peers, enable/disable, QR codes)
+- History recording with charts and CSV export
+- Email alerting (offline detection, daily/weekly summaries via SMTP)
+- Audit log with per-user action tracking
+- Multi-user with role-based access (admin / viewer)
+- Caddy reverse proxy with automatic Let's Encrypt TLS
+- Subdomain routing for wg-easy management panels
 
 ## Getting Started
 
 ### Prerequisites
 
--   Go 1.22+ (for building from source)
--   **WireGuard Kernel Module & Tools**: Sentra strictly requires a real WireGuard interface (e.g., `wg0`). Mock mode has been removed.
--   Docker & Docker Compose (recommended for deployment)
+- Go 1.22+
+- Docker & Docker Compose
+- WireGuard kernel module on the host
 
-### Installation (Docker)
+### Installation
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/ChronoCoders/sentra.git
-    cd sentra
-    ```
-
-2.  Run with Docker Compose:
-    ```bash
-    docker-compose up -d --build
-    ```
-
-    **Note**: The Agent requires host network mode to access the WireGuard interface. Ensure your `docker-compose.yml` is configured correctly.
-
-### Installation (Manual)
-
-1.  Build the binaries:
-    ```bash
-    go build -o sentra-control ./cmd/control
-    go build -o sentra-agent ./cmd/agent
-    ```
-
-2.  Run the control plane (which includes the local agent):
-    ```bash
-    sudo ./sentra-control
-    ```
+```bash
+git clone https://github.com/ChronoCoders/sentrazone.git
+cd sentrazone
+cp .env.example .env  # fill in your values
+docker compose up -d --build
+```
 
 ### Configuration
 
-Sentra requires environment variables for configuration. See `.env.example` (if available) or check `internal/config/config.go`.
+Key environment variables (set in `.env`):
 
-Key variables:
--   `WG_INTERFACE`: WireGuard interface name (default: `wg0`).
--   `PORT`: API server port (default: `8080`).
--   `JWT_SECRET`: Secret key for JWT authentication.
-
-### SSL Configuration
-
-Sentra supports HTTPS out of the box. You can either provide your own certificates or let Sentra generate self-signed certificates for local development.
-
-Key variables:
--   `SENTRA_TLS_CERT`: Path to the TLS certificate file.
--   `SENTRA_TLS_KEY`: Path to the TLS private key file.
--   `SENTRA_TLS_AUTO`: Set to `true` to automatically generate self-signed certificates if `SENTRA_TLS_CERT` and `SENTRA_TLS_KEY` are not provided or do not exist. (Default: `false`)
-
-Example (Docker Compose):
-```yaml
-environment:
-  - SENTRA_TLS_AUTO=true
-```
-
-### Agent Configuration (SSL)
-
-If you are using self-signed certificates on the Control Plane, you must configure the Agent to skip verification:
-
-```yaml
-environment:
-  - SENTRA_INSECURE_SKIP_VERIFY=true
-```
-
-## Features & Status
-
--   [x] **Core Architecture**: Control/Agent split, EventBus, StatusCache.
--   [x] **WireGuard Integration**: `wgctrl-go` for interface management (Real interface required).
--   [x] **System Metrics**: CPU, Memory, Disk, Load usage monitoring.
--   [x] **API**: REST API for status and management.
--   [x] **Authentication**: JWT middleware and Role-Based Access Control (RBAC).
--   [x] **Real-time Dashboard**: WebSocket-based live updates for traffic and peer status.
--   [x] **Remote Agents**: Support for remote agents via HTTP reporting.
+| Variable | Description |
+|---|---|
+| `SENTRA_JWT_SECRET` | Secret for JWT signing |
+| `SENTRA_AUTH_TOKEN` | Shared token for agent → control auth |
+| `SENTRA_ADMIN_EMAIL` | Initial admin account email |
+| `SENTRA_ADMIN_PASSWORD` | Initial admin account password |
+| `SENTRA_DB` | Path to SQLite database file |
+| `SENTRA_SMTP_HOST` | SMTP host for email alerts |
+| `SENTRA_ALERT_EMAIL` | Recipient address for alerts |
+| `SENTRA_WG_EASY_PASSWORD` | Password for wg-easy API access |
 
 ## License
 
