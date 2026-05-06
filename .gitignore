@@ -21,3 +21,5 @@ backend/vpn-ui
 
 # Vendor
 vendor/
+.env
+backups/

@@ -1,0 +1,26 @@
+sentrazone.com {
+    header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    header X-Frame-Options "DENY"
+    header X-Content-Type-Options "nosniff"
+    header Referrer-Policy "strict-origin-when-cross-origin"
+
+    handle {
+        reverse_proxy control:8080
+    }
+}
+
+wg-la.sentrazone.com {
+    reverse_proxy wg-easy:51821
+}
+
+wg-va.sentrazone.com {
+    reverse_proxy wg-easy-va:51821
+}
+
+wg-tx.sentrazone.com {
+    reverse_proxy wg-easy-tx:51821
+}
+
+sentrazone.com:8443 {
+    reverse_proxy wstunnel:8080
+}

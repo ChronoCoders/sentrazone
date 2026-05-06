@@ -2,33 +2,31 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Install git for go mod download if needed
-RUN apk add --no-cache git
+RUN apk add --no-cache git curl
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-# Build Control Plane
-RUN CGO_ENABLED=0 go build -o control ./cmd/control
+RUN curl -sL https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.17/tailwindcss-linux-x64 -o /usr/local/bin/tailwindcss     && chmod +x /usr/local/bin/tailwindcss     && echo '@tailwind base; @tailwind components; @tailwind utilities;' > /tmp/tw-input.css     && tailwindcss -i /tmp/tw-input.css -o web/tailwind.css --content 'web/index.html' --minify
 
-# Build Agent
+RUN CGO_ENABLED=0 go build -o control ./cmd/control
 RUN CGO_ENABLED=0 go build -o agent ./cmd/agent
 
-# Final Stage
 FROM alpine:latest
 
 WORKDIR /app
 
-# Install WireGuard tools (wg-quick, wg) for Agent if needed (though we use userspace/kernel via netlink, tools are helpful for debug)
 RUN apk add --no-cache wireguard-tools iproute2 openssl
 
 COPY --from=builder /app/control .
 COPY --from=builder /app/agent .
 COPY --from=builder /app/web ./web
 
-# Expose ports
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
 EXPOSE 8080
 EXPOSE 51820/udp
 

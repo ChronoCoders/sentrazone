@@ -1,667 +1,1216 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-50">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentra Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sentrazone</title>
+    <link rel="stylesheet" href="/tailwind.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        [x-cloak] { display: none !important; }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:           #0F0F0F;
+            --bg-sidebar:   #111111;
+            --bg-card:      #161616;
+            --bg-card-hover:#1C1C1C;
+            --bg-input:     #1A1A1A;
+            --border:       rgba(255,255,255,0.07);
+            --border-strong:rgba(255,255,255,0.11);
+            --text-1: #F0F0F0;
+            --text-2: #8A8F98;
+            --text-3: #4E5157;
+            --accent:       #C8A882;
+            --accent-dim:   rgba(200,168,130,0.12);
+            --success:      #4CAF6E;
+            --success-dim:  rgba(76,175,110,0.12);
+            --warning:      #E8A042;
+            --warning-dim:  rgba(232,160,66,0.12);
+            --danger:       #CF4C4C;
+            --danger-dim:   rgba(207,76,76,0.12);
+            --radius: 5px;
+            --sidebar-w: 216px;
+        }
+
+        html, body { height: 100%; overflow-x: hidden; background: var(--bg); color: var(--text-1); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
+        .l-input { width:100%;background:var(--bg-input);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-1);font-size:13px;padding:8px 10px 8px 36px;outline:none;transition:border-color .15s; }
+        .l-input:focus { border-color:var(--accent); }
+        .l-input::placeholder { color:var(--text-3); }
+        .l-btn { width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;padding:9px 16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s; }
+        .l-btn:hover { background:#D4B896; }
+
+        .linear-layout { display:flex;height:100vh;overflow:hidden; }
+        .linear-sidebar { width:var(--sidebar-w);flex-shrink:0;background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden; }
+        .sb-header { height:57px;padding:0 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0; }
+        .sb-logo { font-size:14px;font-weight:700;color:var(--text-1);letter-spacing:-0.3px; }
+        .sb-section { padding:8px;flex:1;overflow-y:auto; }
+        .sb-label { font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;padding:8px 8px 4px; }
+        .nav-item { display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border-radius:4px;background:none;border:none;color:var(--text-2);font-size:13px;font-weight:400;cursor:pointer;text-align:left;transition:background .1s,color .1s; }
+        .nav-item:hover { background:rgba(255,255,255,0.05);color:var(--text-1); }
+        .nav-item.active { background:rgba(255,255,255,0.07);color:var(--text-1); }
+        .nav-item.active i { color:var(--accent); }
+        .sb-footer { padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px; }
+        .sb-email { flex:1;font-size:11px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .icon-btn { background:none;border:none;color:var(--text-2);cursor:pointer;padding:5px;border-radius:4px;display:flex;align-items:center;transition:background .1s,color .1s; }
+        .icon-btn:hover { background:rgba(255,255,255,0.07);color:var(--text-1); }
+
+        .linear-main { flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;background:var(--bg); }
+        .page-header { height:57px;padding:0 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10; }
+        .page-title { font-size:14px;font-weight:600;color:var(--text-1); }
+        .page-body { padding:20px 28px; }
+
+        .stats-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px; }
+        .stat-cell { background:var(--bg-card);padding:14px 18px; }
+        .stat-label { font-size:11px;color:var(--text-2);margin-bottom:5px;display:flex;align-items:center;gap:5px; }
+        .stat-value { font-size:20px;font-weight:600;color:var(--text-1);letter-spacing:-.5px; }
+
+        .chart-peers-grid { display:grid;grid-template-columns:1fr 300px;gap:12px;margin-bottom:12px; }
+        .agent-metrics-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding-top:10px;border-top:1px solid var(--border); }
+        .add-user-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px; }
+
+        .card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius); }
+        .card-hd { padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+        .card-title { font-size:12px;font-weight:500;color:var(--text-1);display:flex;align-items:center;gap:7px; }
+        .card-bd { padding:14px 16px; }
+
+        .badge { font-size:11px;font-weight:500;padding:2px 7px;border-radius:99px; }
+        .badge-online  { background:var(--success-dim);color:var(--success); }
+        .badge-offline { background:rgba(255,255,255,0.05);color:var(--text-2); }
+        .badge-accent  { background:var(--accent-dim);color:var(--accent); }
+        .badge-live    { background:var(--success-dim);color:var(--success); }
+        .badge-warn    { background:var(--warning-dim);color:var(--warning); }
+        .badge-danger  { background:var(--danger-dim);color:var(--danger); }
+
+        .agent-row { padding:14px 16px;border-bottom:1px solid var(--border);transition:background .1s; }
+        .agent-row:last-child { border-bottom:none; }
+        .agent-row:hover { background:var(--bg-card-hover); }
+
+        .metric-row { display:flex;flex-direction:column;gap:4px; }
+        .metric-head { display:flex;justify-content:space-between;font-size:11px; }
+        .metric-lbl { color:var(--text-2); }
+        .metric-val { color:var(--text-1);font-weight:500; }
+        .bar-bg { height:2px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden; }
+        .bar-fill { height:100%;border-radius:99px;transition:width .5s; }
+        .bar-g { background:var(--success); }
+        .bar-y { background:var(--warning); }
+        .bar-r { background:var(--danger); }
+
+        .peer-label-input { background:transparent;border:none;border-bottom:1px dashed var(--accent);outline:none;color:var(--text-1);font-size:12px;font-family:monospace;width:100%; }
+
+        .dt { width:100%;border-collapse:collapse;font-size:12px; }
+        .dt th { text-align:left;color:var(--text-3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:10px 16px; }
+        .dt td { padding:10px 16px;border-top:1px solid var(--border);color:var(--text-1); }
+
+        .btn { display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1);transition:background .1s,border-color .1s; }
+        .btn:hover { background:var(--bg-card-hover);border-color:var(--border-strong); }
+        .btn-primary { background:var(--accent);border-color:transparent;color:#fff; }
+        .btn-primary:hover { background:#D4B896; }
+        .btn-danger { background:none;border-color:var(--border);color:var(--danger); }
+        .btn-danger:hover { background:var(--danger-dim);border-color:var(--danger); }
+        .btn-sm { padding:3px 8px;font-size:11px; }
+
+        .fi { width:100%;background:var(--bg-input);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-1);font-size:13px;padding:6px 10px;outline:none;transition:border-color .15s; }
+        .fi:focus { border-color:var(--accent); }
+        .fi::placeholder { color:var(--text-3); }
+        .fl { font-size:11px;font-weight:500;color:var(--text-2);margin-bottom:4px;display:block; }
+
+        .modal-ov { position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:50; }
+        .modal-box { background:var(--bg-card);border:1px solid var(--border-strong);border-radius:8px;padding:20px;width:100%;max-width:420px;margin:16px; }
+        .modal-title { font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:14px; }
+
+        .rb { padding:4px 10px;font-size:12px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-2);cursor:pointer;transition:all .1s;outline:none;position:relative;appearance:none; }
+        .rb:first-child { border-radius:var(--radius) 0 0 var(--radius); }
+        .rb:last-child { border-radius:0 var(--radius) var(--radius) 0; }
+        .rb:not(:first-child) { margin-left:-1px; }
+        .rb.active { background:var(--accent-dim);border-color:var(--accent);color:var(--accent);z-index:1; }
+        .rb:hover:not(.active) { background:var(--bg-card-hover);color:var(--text-1);z-index:1; }
+
+        .alert-err { background:var(--danger-dim);border:1px solid rgba(207,76,76,.2);border-radius:var(--radius);color:var(--danger);font-size:12px;padding:7px 12px;text-align:center; }
+        .alert-ok { background:var(--success-dim);border:1px solid rgba(76,175,110,.2);border-radius:var(--radius);color:var(--success);font-size:12px;padding:7px 12px;text-align:center; }
+
+        .peer-li { display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px; }
+        .peer-li:last-child { border-bottom:none; }
+
+        .login-card { padding:40px; }
+
+        /* Quota bar */
+        .quota-bar { height:3px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;margin-top:2px; }
+        .quota-fill { height:100%;border-radius:99px; }
+
+        @media (max-width:768px) {
+            .linear-sidebar { width:48px; }
+            .nav-item span,.sb-logo,.sb-email,.sb-label { display:none; }
+            .nav-item { justify-content:center;padding:8px; }
+            .sb-footer { justify-content:center;flex-wrap:wrap; }
+            .page-header { padding:0 12px;height:auto;min-height:57px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px;gap:8px; }
+            .page-body { padding:12px; }
+            .stats-grid { grid-template-columns:repeat(2,1fr); }
+            .stat-cell { padding:10px 10px; }
+            .stat-value { font-size:16px; }
+            .chart-peers-grid { grid-template-columns:1fr; }
+            .agent-metrics-grid { grid-template-columns:repeat(2,1fr); }
+            .add-user-grid { grid-template-columns:1fr; }
+            .history-controls { flex-wrap:wrap;gap:6px; }
+            .login-card { padding:24px 20px; }
+        }
+
+        @media (max-width:400px) {
+            .history-controls select { min-width:0;width:100%; }
+        }
     </style>
 </head>
-<body class="h-full font-sans text-gray-900 antialiased">
+<body>
 
-    <!-- Login Screen -->
-    <div id="login-screen" class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 hidden fade-in">
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="flex justify-center">
-                <div class="h-16 w-16 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <i data-lucide="shield-check" class="text-white h-10 w-10"></i>
+<!-- Login -->
+<div id="login-screen" class="hidden fade-in" style="position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0F0F0F;overflow:hidden;">
+    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" opacity="0.08">
+        <g stroke="#ffffff" stroke-width="0.5" fill="none">
+            <line x1="42" y1="38" x2="98" y2="72"/><line x1="98" y1="72" x2="155" y2="44"/><line x1="42" y1="38" x2="155" y2="44"/><line x1="98" y1="72" x2="76" y2="130"/><line x1="76" y1="130" x2="155" y2="44"/><line x1="155" y1="44" x2="220" y2="88"/><line x1="76" y1="130" x2="220" y2="88"/><line x1="220" y1="88" x2="190" y2="160"/><line x1="76" y1="130" x2="190" y2="160"/><line x1="42" y1="38" x2="18" y2="90"/><line x1="18" y1="90" x2="76" y2="130"/>
+            <line x1="1320" y1="30" x2="1390" y2="58"/><line x1="1390" y1="58" x2="1420" y2="110"/><line x1="1320" y1="30" x2="1420" y2="110"/><line x1="1280" y1="72" x2="1320" y2="30"/><line x1="1280" y1="72" x2="1390" y2="58"/><line x1="1280" y1="72" x2="1360" y2="140"/><line x1="1360" y1="140" x2="1420" y2="110"/><line x1="1240" y1="130" x2="1280" y2="72"/><line x1="1240" y1="130" x2="1360" y2="140"/><line x1="1240" y1="130" x2="1200" y2="80"/><line x1="1200" y1="80" x2="1280" y2="72"/>
+            <line x1="30" y1="800" x2="90" y2="830"/><line x1="90" y1="830" x2="150" y2="810"/><line x1="30" y1="800" x2="150" y2="810"/><line x1="150" y1="810" x2="200" y2="860"/><line x1="90" y1="830" x2="200" y2="860"/><line x1="60" y1="870" x2="90" y2="830"/><line x1="60" y1="870" x2="150" y2="810"/><line x1="200" y1="860" x2="240" y2="820"/><line x1="150" y1="810" x2="240" y2="820"/>
+            <line x1="1280" y1="820" x2="1350" y2="800"/><line x1="1350" y1="800" x2="1410" y2="840"/><line x1="1280" y1="820" x2="1410" y2="840"/><line x1="1350" y1="800" x2="1400" y2="870"/><line x1="1410" y1="840" x2="1400" y2="870"/><line x1="1240" y1="860" x2="1280" y2="820"/><line x1="1240" y1="860" x2="1350" y2="800"/><line x1="1200" y1="820" x2="1280" y2="820"/>
+            <line x1="28" y1="360" x2="95" y2="310"/><line x1="95" y1="310" x2="160" y2="380"/><line x1="28" y1="360" x2="160" y2="380"/><line x1="160" y1="380" x2="110" y2="440"/><line x1="28" y1="360" x2="110" y2="440"/>
+            <line x1="1310" y1="420" x2="1380" y2="380"/><line x1="1380" y1="380" x2="1420" y2="440"/><line x1="1310" y1="420" x2="1420" y2="440"/><line x1="1310" y1="420" x2="1350" y2="490"/>
+            <line x1="340" y1="180" x2="400" y2="220"/><line x1="400" y1="220" x2="360" y2="270"/><line x1="1080" y1="200" x2="1130" y2="160"/><line x1="1130" y1="160" x2="1100" y2="250"/><line x1="350" y1="680" x2="420" y2="720"/><line x1="1060" y1="700" x2="1120" y2="660"/>
+        </g>
+        <g fill="#ffffff">
+            <circle cx="42" cy="38" r="2.2"/><circle cx="98" cy="72" r="2.5"/><circle cx="155" cy="44" r="2"/><circle cx="76" cy="130" r="2.2"/><circle cx="220" cy="88" r="2"/><circle cx="190" cy="160" r="1.8"/><circle cx="18" cy="90" r="2"/>
+            <circle cx="1320" cy="30" r="2.2"/><circle cx="1390" cy="58" r="2.5"/><circle cx="1420" cy="110" r="2"/><circle cx="1280" cy="72" r="2.2"/><circle cx="1360" cy="140" r="2"/><circle cx="1240" cy="130" r="1.8"/><circle cx="1200" cy="80" r="2"/>
+            <circle cx="30" cy="800" r="2.2"/><circle cx="90" cy="830" r="2.5"/><circle cx="150" cy="810" r="2"/><circle cx="200" cy="860" r="2.2"/><circle cx="60" cy="870" r="2"/><circle cx="240" cy="820" r="1.8"/>
+            <circle cx="1280" cy="820" r="2.2"/><circle cx="1350" cy="800" r="2.5"/><circle cx="1410" cy="840" r="2"/><circle cx="1400" cy="870" r="1.8"/><circle cx="1240" cy="860" r="2"/><circle cx="1200" cy="820" r="2"/>
+            <circle cx="28" cy="360" r="2"/><circle cx="95" cy="310" r="2.2"/><circle cx="160" cy="380" r="2"/><circle cx="110" cy="440" r="1.8"/>
+            <circle cx="1310" cy="420" r="2"/><circle cx="1380" cy="380" r="2.2"/><circle cx="1420" cy="440" r="1.8"/><circle cx="1350" cy="490" r="2"/>
+            <circle cx="340" cy="180" r="1.8"/><circle cx="400" cy="220" r="2"/><circle cx="360" cy="270" r="1.8"/>
+            <circle cx="1080" cy="200" r="1.8"/><circle cx="1130" cy="160" r="2"/><circle cx="1100" cy="250" r="1.8"/>
+            <circle cx="350" cy="680" r="1.8"/><circle cx="420" cy="720" r="2"/>
+            <circle cx="1060" cy="700" r="1.8"/><circle cx="1120" cy="660" r="2"/>
+        </g>
+    </svg>
+    <div class="login-card" style="position:relative;z-index:10;width:calc(100% - 32px);max-width:360px;margin:0 auto;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;">
+        <div style="text-align:center;margin-bottom:32px;">
+            <span style="font-family:'Raleway',sans-serif;font-size:26px;font-weight:400;color:#c8b99a;letter-spacing:0.08em;">Sentrazone</span>
+        </div>
+        <form onsubmit="event.preventDefault();login();" style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+                <label class="fl">Email</label>
+                <div style="position:relative;">
+                    <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#4E5157;display:flex;"><i data-lucide="mail" style="width:14px;height:14px;"></i></div>
+                    <input id="email" type="email" required class="l-input" placeholder="you@example.com">
                 </div>
             </div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to Sentra</h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-                Secure Infrastructure Control Plane
-            </p>
-        </div>
-
-        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
-                <form class="space-y-6" onsubmit="event.preventDefault(); login();">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="mail" class="h-5 w-5 text-gray-400"></i>
-                            </div>
-                            <input id="email" name="email" type="email" required class="pl-10 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="admin@sentra.io">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
-                            </div>
-                            <input id="password" name="password" type="password" required class="pl-10 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" placeholder="••••••••">
-                        </div>
-                    </div>
-
-                    <div>
-                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                            Sign in
-                        </button>
-                    </div>
-                    <div id="login-error" class="text-red-600 text-sm text-center hidden bg-red-50 p-2 rounded border border-red-100"></div>
-                </form>
+            <div>
+                <label class="fl">Password</label>
+                <div style="position:relative;">
+                    <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#4E5157;display:flex;"><i data-lucide="lock" style="width:14px;height:14px;"></i></div>
+                    <input id="password" type="password" required class="l-input" placeholder="••••••••">
+                </div>
             </div>
-        </div>
+            <button type="submit" class="l-btn">Sign in <i data-lucide="arrow-right" style="width:14px;height:14px;"></i></button>
+            <div id="login-error" class="alert-err hidden"></div>
+        </form>
     </div>
+</div>
 
-    <!-- Dashboard Layout -->
-    <div id="dashboard" class="min-h-full flex flex-col hidden fade-in">
-        <nav class="bg-indigo-600 shadow-lg z-10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center gap-3">
-                        <span class="text-white font-bold text-xl tracking-tight">Sentra</span>
+<!-- Dashboard -->
+<div id="dashboard" class="linear-layout hidden fade-in">
+    <aside class="linear-sidebar">
+        <div class="sb-header">
+            <span style="font-family:'Raleway',sans-serif;font-size:15px;font-weight:400;color:#c8b99a;letter-spacing:0.08em;">Sentrazone</span>
+        </div>
+        <div class="sb-section">
+            <div class="sb-label">Workspace</div>
+            <button onclick="switchTab('overview')" id="nav-overview" class="nav-item active">
+                <i data-lucide="layout-grid" style="width:15px;height:15px;flex-shrink:0;"></i><span>Overview</span>
+            </button>
+            <button onclick="switchTab('history')" id="nav-history" class="nav-item">
+                <i data-lucide="bar-chart-2" style="width:15px;height:15px;flex-shrink:0;"></i><span>History</span>
+            </button>
+            <button onclick="switchTab('users')" id="nav-users" class="nav-item hidden">
+                <i data-lucide="users" style="width:15px;height:15px;flex-shrink:0;"></i><span>Users</span>
+            </button>
+            <button onclick="switchTab('audit')" id="nav-audit" class="nav-item hidden">
+                <i data-lucide="shield-check" style="width:15px;height:15px;flex-shrink:0;"></i><span>Audit Log</span>
+            </button>
+        </div>
+        <div class="sb-footer">
+            <span class="sb-email" id="user-email-display"></span>
+            <button onclick="logout()" class="icon-btn" title="Logout"><i data-lucide="log-out" style="width:14px;height:14px;"></i></button>
+        </div>
+    </aside>
+
+    <main class="linear-main">
+
+        <!-- Overview -->
+        <div id="tab-overview">
+            <div class="page-header">
+                <span class="page-title">Overview</span>
+                <span class="badge badge-live">● Live</span>
+            </div>
+            <div class="page-body">
+                <div class="stats-grid">
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="server" style="width:12px;height:12px;color:var(--accent);"></i>Servers</div>
+                        <div class="stat-value" id="stat-total-servers">0</div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span class="text-indigo-100 text-sm hidden sm:block" id="user-email-display"></span>
-                        <button onclick="logout()" class="bg-indigo-700 p-2 rounded-full text-indigo-200 hover:text-white hover:bg-indigo-600 focus:outline-none transition-colors duration-200" title="Logout">
-                            <i data-lucide="log-out" class="h-5 w-5"></i>
-                        </button>
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="activity" style="width:12px;height:12px;color:var(--success);"></i>Online</div>
+                        <div class="stat-value" id="stat-healthy">0</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="users" style="width:12px;height:12px;color:var(--text-2);"></i>Peers</div>
+                        <div class="stat-value" id="stat-total-peers">0</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="cpu" style="width:12px;height:12px;color:var(--warning);"></i>Avg Load</div>
+                        <div class="stat-value" id="stat-avg-load">—</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="upload-cloud" style="width:12px;height:12px;color:var(--text-2);"></i>Total Upload</div>
+                        <div class="stat-value" id="stat-total-up">0 B</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="download-cloud" style="width:12px;height:12px;color:var(--text-2);"></i>Total Download</div>
+                        <div class="stat-value" id="stat-total-down">0 B</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="arrow-up" style="width:12px;height:12px;color:var(--accent);"></i>Up Rate</div>
+                        <div class="stat-value" id="stat-rate-up">0 B/s</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-label"><i data-lucide="arrow-down" style="width:12px;height:12px;color:var(--success);"></i>Down Rate</div>
+                        <div class="stat-value" id="stat-rate-down">0 B/s</div>
+                    </div>
+                </div>
+
+                <div class="chart-peers-grid">
+                    <div class="card">
+                        <div class="card-hd">
+                            <span class="card-title"><i data-lucide="activity" style="width:14px;height:14px;color:var(--accent);"></i>Real-time Traffic</span>
+                        </div>
+                        <div class="card-bd"><div style="height:200px;"><canvas id="trafficChart"></canvas></div></div>
+                    </div>
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="card-hd">
+                            <span class="card-title"><i data-lucide="users" style="width:14px;height:14px;color:var(--accent);"></i>Top Peers</span>
+                        </div>
+                        <div class="card-bd" style="flex:1;overflow-y:auto;max-height:240px;" id="peer-list-container">
+                            <p style="color:var(--text-3);font-size:12px;font-style:italic;">Waiting for data...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-hd">
+                        <span class="card-title"><i data-lucide="server" style="width:14px;height:14px;color:var(--accent);"></i>Connected Agents</span>
+                        <span class="badge badge-live">Live</span>
+                    </div>
+                    <ul id="server-list" style="list-style:none;"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div id="tab-history" class="hidden">
+            <div class="page-header">
+                <span class="page-title">History</span>
+                <div class="history-controls" style="display:flex;align-items:center;gap:10px;">
+                    <select id="history-server" onchange="loadHistory()" class="fi" style="width:auto;min-width:150px;font-size:12px;"></select>
+                    <div style="display:flex;">
+                        <button onclick="setHistoryRange(1)"  id="hr-1"  class="rb">1h</button>
+                        <button onclick="setHistoryRange(6)"  id="hr-6"  class="rb">6h</button>
+                        <button onclick="setHistoryRange(24)" id="hr-24" class="rb active">24h</button>
+                    </div>
+                    <button onclick="exportCSV()" class="btn btn-sm"><i data-lucide="download" style="width:12px;height:12px;"></i>Export CSV</button>
+                </div>
+            </div>
+            <div class="page-body">
+                <div id="history-empty" style="text-align:center;padding:60px 0;color:var(--text-3);">
+                    <i data-lucide="bar-chart-2" style="width:36px;height:36px;margin:0 auto 12px;display:block;opacity:.4;"></i>
+                    <p style="font-size:13px;">Select a server to view history</p>
+                </div>
+                <div id="history-charts" class="hidden" style="display:flex;flex-direction:column;gap:12px;">
+                    <div class="card"><div class="card-hd"><span class="card-title">CPU Usage (%)</span></div><div class="card-bd"><div style="height:140px;"><canvas id="histCpuChart"></canvas></div></div></div>
+                    <div class="card"><div class="card-hd"><span class="card-title">Memory Usage (%)</span></div><div class="card-bd"><div style="height:140px;"><canvas id="histMemChart"></canvas></div></div></div>
+                    <div class="card"><div class="card-hd"><span class="card-title">Disk Usage (%)</span></div><div class="card-bd"><div style="height:140px;"><canvas id="histDiskChart"></canvas></div></div></div>
+                    <div class="card"><div class="card-hd"><span class="card-title">Network Rate (KB/s)</span></div><div class="card-bd"><div style="height:140px;"><canvas id="histNetChart"></canvas></div></div></div>
+                    <div class="card"><div class="card-hd"><span class="card-title">Ping Latency (ms)</span></div><div class="card-bd"><div style="height:140px;"><canvas id="histPingChart"></canvas></div></div></div>
+                    <div class="card"><div class="card-hd"><span class="card-title">Connected Peers</span></div><div class="card-bd"><div style="height:140px;"><canvas id="histPeerChart"></canvas></div></div></div>
+
+                    <!-- Per-peer bandwidth -->
+                    <div class="card">
+                        <div class="card-hd">
+                            <span class="card-title"><i data-lucide="user" style="width:14px;height:14px;color:var(--accent);"></i>Per-Peer Bandwidth History</span>
+                            <select id="peer-history-select" onchange="loadPeerHistory()" class="fi" style="width:auto;min-width:160px;font-size:11px;padding:3px 8px;"></select>
+                        </div>
+                        <div id="peer-history-empty" class="card-bd" style="text-align:center;color:var(--text-3);font-size:12px;padding:20px;">Select a peer above</div>
+                        <div id="peer-history-chart-wrap" class="hidden card-bd"><div style="height:160px;"><canvas id="peerHistChart"></canvas></div></div>
                     </div>
                 </div>
             </div>
-        </nav>
+        </div>
 
-        <main class="flex-1 py-8 bg-gray-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                <!-- Page Header -->
-                <div class="md:flex md:items-center md:justify-between mb-8">
-                    <div class="flex-1 min-w-0">
-                        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                            Infrastructure Overview
-                        </h2>
+        <!-- Users -->
+        <div id="tab-users" class="hidden">
+            <div class="page-header">
+                <span class="page-title">Users</span>
+                <button onclick="showAddUser()" class="btn btn-primary"><i data-lucide="user-plus" style="width:13px;height:13px;"></i>Add User</button>
+            </div>
+            <div class="page-body">
+                <div id="add-user-form" class="hidden card" style="padding:18px;margin-bottom:12px;">
+                    <div style="font-size:13px;font-weight:500;color:var(--text-1);margin-bottom:14px;">New User</div>
+                    <div class="add-user-grid">
+                        <div><label class="fl">Email</label><input id="new-email" type="email" placeholder="user@example.com" class="fi"></div>
+                        <div><label class="fl">Name</label><input id="new-name" type="text" placeholder="Full Name" class="fi"></div>
+                        <div><label class="fl">Password</label><input id="new-password" type="password" placeholder="••••••••" class="fi"></div>
+                        <div><label class="fl">Role</label><select id="new-role" class="fi"><option value="viewer">Viewer</option><option value="admin">Admin</option></select></div>
                     </div>
-                    <div class="mt-4 flex md:mt-0 md:ml-4">
-                        <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i data-lucide="refresh-cw" class="h-4 w-4 mr-2"></i> Refresh
-                        </button>
+                    <div id="add-user-error" class="alert-err hidden" style="margin-bottom:10px;"></div>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="createUser()" class="btn btn-primary">Create</button>
+                        <button onclick="hideAddUser()" class="btn">Cancel</button>
                     </div>
                 </div>
+                <div class="card">
+                    <table class="dt">
+                        <thead><tr><th>User</th><th>Role</th><th>Created</th><th style="text-align:right;">Actions</th></tr></thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
 
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-                    <!-- Total Servers -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-                        <div class="p-5">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-indigo-50 rounded-md p-3">
-                                    <i data-lucide="server" class="h-6 w-6 text-indigo-600"></i>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">Total Servers</dt>
-                                        <dd class="text-2xl font-semibold text-gray-900" id="stat-total-servers">0</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Alert config status (admin) -->
+                <div id="alert-status-card" class="card" style="margin-top:12px;padding:14px 16px;">
+                    <div style="font-size:12px;font-weight:500;color:var(--text-1);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                        <i data-lucide="bell" style="width:13px;height:13px;color:var(--accent);"></i>Email Alerts
                     </div>
-
-                    <!-- Healthy Servers -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-                        <div class="p-5">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-green-50 rounded-md p-3">
-                                    <i data-lucide="activity" class="h-6 w-6 text-green-600"></i>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">Online Agents</dt>
-                                        <dd class="text-2xl font-semibold text-gray-900" id="stat-healthy">0</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Total Peers -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-                        <div class="p-5">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-blue-50 rounded-md p-3">
-                                    <i data-lucide="users" class="h-6 w-6 text-blue-600"></i>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">Active Peers</dt>
-                                        <dd class="text-2xl font-semibold text-gray-900" id="stat-total-peers">0</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- System Load -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-                        <div class="p-5">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-orange-50 rounded-md p-3">
-                                    <i data-lucide="cpu" class="h-6 w-6 text-orange-600"></i>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">Avg Load</dt>
-                                        <dd class="text-2xl font-semibold text-gray-900" id="stat-avg-load">-</dd>
-                    </dl>
+                    <div id="alert-status-content" style="font-size:12px;color:var(--text-2);">Loading...</div>
                 </div>
             </div>
+        </div>
+
+        <!-- Audit Log -->
+        <div id="tab-audit" class="hidden">
+            <div class="page-header">
+                <span class="page-title">Audit Log</span>
+                <button onclick="loadAudit()" class="btn btn-sm"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>Refresh</button>
+            </div>
+            <div class="page-body">
+                <div class="card">
+                    <table class="dt">
+                        <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th><th>IP</th></tr></thead>
+                        <tbody id="audit-table-body"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3);">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-tunnel" class="hidden"></div>
+    </main>
+</div>
+
+<!-- Password Modal -->
+<div id="pwd-modal" class="modal-ov hidden">
+    <div class="modal-box">
+        <div class="modal-title">Change Password</div>
+        <input id="pwd-modal-uid" type="hidden">
+        <div style="margin-bottom:12px;"><label class="fl">New Password</label><input id="pwd-new" type="password" placeholder="••••••••" class="fi"></div>
+        <div id="pwd-modal-error" class="alert-err hidden" style="margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+            <button onclick="submitChangePassword()" class="btn btn-primary">Save</button>
+            <button onclick="closePwdModal()" class="btn">Cancel</button>
         </div>
     </div>
 </div>
 
-<!-- Network Stats Grid -->
-<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-    <!-- Total Data Transfer (Up) -->
-    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 bg-blue-50 rounded-md p-3">
-                    <i data-lucide="upload-cloud" class="h-6 w-6 text-blue-600"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Total Upload</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" id="stat-total-up">0 B</dd>
-                    </dl>
-                </div>
-            </div>
+<!-- Peer Meta Modal -->
+<div id="peer-modal" class="modal-ov hidden">
+    <div class="modal-box" style="max-width:480px;">
+        <div class="modal-title" id="peer-modal-title">Edit Peer</div>
+        <input id="peer-modal-pubkey" type="hidden">
+        <input id="peer-modal-serverid" type="hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div style="grid-column:1/-1;"><label class="fl">Label / Name</label><input id="peer-modal-label" type="text" placeholder="e.g. john-laptop" class="fi"></div>
+            <div style="grid-column:1/-1;"><label class="fl">Notes</label><input id="peer-modal-notes" type="text" placeholder="Optional notes..." class="fi"></div>
+            <div><label class="fl">Expires (optional)</label><input id="peer-modal-expires" type="datetime-local" class="fi"></div>
+            <div><label class="fl">Quota (GB, 0 = unlimited)</label><input id="peer-modal-quota" type="number" min="0" step="0.1" placeholder="0" class="fi"></div>
         </div>
-    </div>
-
-    <!-- Total Data Transfer (Down) -->
-    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 bg-green-50 rounded-md p-3">
-                    <i data-lucide="download-cloud" class="h-6 w-6 text-green-600"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Total Download</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" id="stat-total-down">0 B</dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Current Upload Speed -->
-    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 bg-indigo-50 rounded-md p-3">
-                    <i data-lucide="arrow-up-circle" class="h-6 w-6 text-indigo-600"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Current Up Rate</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" id="stat-rate-up">0 B/s</dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Current Download Speed -->
-    <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-100">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 bg-teal-50 rounded-md p-3">
-                    <i data-lucide="arrow-down-circle" class="h-6 w-6 text-teal-600"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Current Down Rate</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" id="stat-rate-down">0 B/s</dd>
-                    </dl>
-                </div>
-            </div>
+        <div id="peer-modal-error" class="alert-err hidden" style="margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+            <button onclick="submitPeerMeta()" class="btn btn-primary">Save</button>
+            <button onclick="closePeerModal()" class="btn">Cancel</button>
         </div>
     </div>
 </div>
 
-<!-- Traffic Graph & Peers -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-    <!-- Traffic Graph -->
-    <div class="bg-white p-6 rounded-lg shadow lg:col-span-2 border border-gray-100">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4 flex items-center gap-2">
-            <i data-lucide="activity" class="h-5 w-5 text-indigo-500"></i>
-            Real-time Traffic History
-        </h3>
-        <div class="h-64">
-            <canvas id="trafficChart"></canvas>
+<!-- VPN Clients Modal -->
+<div id="clients-modal" class="modal-ov hidden" onclick="if(event.target===this)closeClientsModal()">
+    <div class="modal-box" style="max-width:560px;max-height:80vh;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span class="modal-title" id="clients-modal-title" style="margin-bottom:0;">VPN Clients</span>
+            <button onclick="closeClientsModal()" class="btn btn-sm">✕</button>
         </div>
-    </div>
-
-    <!-- Peer Usage List (Compact) -->
-    <div class="bg-white p-6 rounded-lg shadow border border-gray-100 flex flex-col">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4 flex items-center gap-2">
-            <i data-lucide="users" class="h-5 w-5 text-indigo-500"></i>
-            Top Peers by Usage
-        </h3>
-        <div class="flex-1 overflow-y-auto" style="max-height: 250px;" id="peer-list-container">
-            <p class="text-gray-500 text-sm italic">Waiting for peer data...</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input id="new-client-name" type="text" class="fi" placeholder="New client name..." style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')addClient()">
+            <button onclick="addClient()" class="btn btn-primary btn-sm"><i data-lucide="plus" style="width:12px;height:12px;"></i>Add</button>
         </div>
+        <div id="clients-modal-error" class="alert-err hidden" style="margin-bottom:8px;font-size:12px;"></div>
+        <div id="clients-modal-body" style="overflow-y:auto;flex:1;"></div>
     </div>
 </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Server List -->
-                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-100">
-                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Connected Agents</h3>
-                            <p class="mt-1 max-w-2xl text-sm text-gray-500">Real-time status updates from your infrastructure.</p>
-                        </div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Live
-                        </span>
-                    </div>
-                    <ul id="server-list" class="divide-y divide-gray-200">
-                        <!-- Rows injected here -->
-                    </ul>
-                </div>
-            </div>
-        </main>
+<!-- QR Code Modal -->
+<div id="qr-modal" class="modal-ov hidden" onclick="if(event.target===this)closeQRModal()">
+    <div class="modal-box" style="max-width:340px;text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <span class="modal-title" id="qr-modal-title" style="margin-bottom:0;">QR Code</span>
+            <button onclick="closeQRModal()" class="btn btn-sm">✕</button>
+        </div>
+        <div id="qr-modal-body"></div>
+        <p style="font-size:11px;color:var(--text-3);margin-top:10px;">Scan with the WireGuard app to connect</p>
     </div>
+</div>
 
-    <script>
-        let token = localStorage.getItem('sentra_token');
-        let userEmail = localStorage.getItem('sentra_email');
-        const servers = {};
-        const networkStats = {}; // { serverId: { lastUp, lastDown, lastTime } }
-        let trafficChart;
-        let ws;
+<script>
+function toggleTheme() {}
 
-        // Initialize icons on load
-        lucide.createIcons();
+let token = localStorage.getItem('sentra_token');
+let userEmail = localStorage.getItem('sentra_email');
+let userRole = localStorage.getItem('sentra_role') || 'viewer';
+const servers = {};
+const networkStats = {};
+const peerLabels = {};
+let peerMetas = {};
+let uptimeData = {};
+let trafficChart;
+let histCharts = {};
+let peerHistChart;
+let ws;
+let historyHours = 24;
+let expandedServers = new Set();
+let currentHistoryServer = '';
+let currentHistoryPoints = [];
 
-        function init() {
-            if (!token) {
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('dashboard').classList.add('hidden');
-            } else {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                if (userEmail) document.getElementById('user-email-display').innerText = userEmail;
-                initChart();
-                connectWS();
-            }
+const SERVER_COLORS = [
+    { border: 'rgb(200,168,130)',  bg: 'rgba(200,168,130,0.08)'  },
+    { border: 'rgb(76,175,110)',  bg: 'rgba(76,175,110,0.08)'  },
+    { border: 'rgb(232,160,66)',  bg: 'rgba(232,160,66,0.08)'  },
+    { border: 'rgb(207,76,76)',   bg: 'rgba(207,76,76,0.08)'   },
+    { border: 'rgb(139,92,246)',  bg: 'rgba(139,92,246,0.08)'  },
+    { border: 'rgb(236,72,153)', bg: 'rgba(236,72,153,0.08)'  },
+];
+
+const STALE_MS = 35000;
+
+lucide.createIcons();
+
+function init() {
+    if (!token) {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('dashboard').classList.add('hidden');
+    } else {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        if (userEmail) document.getElementById('user-email-display').innerText = userEmail;
+        if (userRole === 'admin') {
+            document.getElementById('nav-users').classList.remove('hidden');
+            document.getElementById('nav-audit').classList.remove('hidden');
         }
+        initTrafficChart();
+        fetchPeerLabels().then(() => fetchPeerMetas()).then(() => connectWS());
+        fetchUptime();
+        setInterval(fetchUptime, 60000);
+    }
+}
 
-        function initChart() {
-            const ctx = document.getElementById('trafficChart').getContext('2d');
-            trafficChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Upload (KB/s)',
-                            data: [],
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Download (KB/s)',
-                            data: [],
-                            borderColor: 'rgb(16, 185, 129)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: '#f3f4f6' }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'top' }
-                    }
-                }
-            });
-        }
+// Auth
+async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('login-error');
+    errorDiv.classList.add('hidden');
+    try {
+        const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+        if (res.ok) {
+            const data = await res.json();
+            token = data.token; userRole = data.role || 'viewer';
+            localStorage.setItem('sentra_token', token);
+            localStorage.setItem('sentra_email', email);
+            localStorage.setItem('sentra_role', userRole);
+            userEmail = email; init();
+        } else { errorDiv.innerText = 'Invalid credentials'; errorDiv.classList.remove('hidden'); }
+    } catch (e) { errorDiv.innerText = 'Error connecting to server'; errorDiv.classList.remove('hidden'); }
+}
 
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('login-error');
-            
-            try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                if (res.ok) {
-                    const data = await res.json();
-                    token = data.token;
-                    localStorage.setItem('sentra_token', token);
-                    localStorage.setItem('sentra_email', email);
-                    userEmail = email;
-                    init();
-                } else {
-                    errorDiv.innerText = 'Invalid credentials';
-                    errorDiv.classList.remove('hidden');
-                }
-            } catch (e) {
-                console.error(e);
-                errorDiv.innerText = 'Error connecting to server';
-                errorDiv.classList.remove('hidden');
-            }
-        }
+function logout() {
+    localStorage.removeItem('sentra_token'); localStorage.removeItem('sentra_email'); localStorage.removeItem('sentra_role');
+    token = null; if (ws) ws.close(); init();
+}
 
-        function logout() {
-            localStorage.removeItem('sentra_token');
-            localStorage.removeItem('sentra_email');
-            token = null;
-            if (ws) ws.close();
-            init();
-        }
+// Tab navigation
+function switchTab(name) {
+    ['overview','history','users','audit'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        const btn = document.getElementById('nav-' + t);
+        if (btn) btn.classList.remove('active');
+    });
+    document.getElementById('tab-' + name).classList.remove('hidden');
+    const activeBtn = document.getElementById('nav-' + name);
+    if (activeBtn) activeBtn.classList.add('active');
+    if (name === 'history') populateHistoryServerSelect();
+    if (name === 'users') { loadUsers(); loadAlertConfig(); }
+    if (name === 'audit') loadAudit();
+}
 
-        function connectWS() {
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws?token=${token}`);
-            
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                servers[data.server_id] = data;
-                
-                // Update Network Stats
-                updateNetworkStats(data);
-                
-                render();
-            };
+// WebSocket
+function connectWS() {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${window.location.host}/ws?token=${token}`);
+    ws.onmessage = e => {
+        const data = JSON.parse(e.data);
+        servers[data.server_id] = data;
+        updateNetworkStats(data);
+        renderOverview();
+        if (!document.getElementById('tab-history').classList.contains('hidden')) populateHistoryServerSelect();
+    };
+    ws.onclose = () => setTimeout(connectWS, 3000);
+}
 
-            ws.onclose = () => {
-                setTimeout(connectWS, 3000);
-            };
-        }
+// Peer labels & metas
+async function fetchPeerLabels() {
+    try { const res = await apiFetch('/api/peer-labels'); if (res.ok) { const data = await res.json(); Object.assign(peerLabels, data); } } catch (_) {}
+}
+async function fetchPeerMetas() {
+    try { const res = await apiFetch('/api/peer-meta'); if (res.ok) { peerMetas = await res.json(); } } catch (_) {}
+}
+function peerDisplayName(pubkey) {
+    return (peerMetas[pubkey] && peerMetas[pubkey].label) || peerLabels[pubkey] || (pubkey.substring(0,12) + '…');
+}
+async function savePeerLabel(pubkey, label) {
+    if (!label.trim()) { await apiFetch('/api/peer-labels','DELETE',{public_key:pubkey}); delete peerLabels[pubkey]; }
+    else { await apiFetch('/api/peer-labels','POST',{public_key:pubkey,label:label.trim()}); peerLabels[pubkey] = label.trim(); }
+    await fetchPeerMetas();
+    renderOverview();
+}
 
-        function updateNetworkStats(data) {
-            const sid = data.server_id;
-            const sys = data.status.system || {};
-            const now = new Date().getTime();
-            const currentUp = sys.net_bytes_sent || 0;
-            const currentDown = sys.net_bytes_recv || 0;
+// Uptime
+async function fetchUptime() {
+    try {
+        const res = await apiFetch('/api/uptime?hours=24');
+        if (res.ok) { uptimeData = await res.json(); renderOverview(); }
+    } catch(_) {}
+}
 
-            if (!networkStats[sid]) {
-                networkStats[sid] = { lastUp: currentUp, lastDown: currentDown, lastTime: now, rateUp: 0, rateDown: 0 };
-            } else {
-                const prev = networkStats[sid];
-                const timeDiff = (now - prev.lastTime) / 1000; // seconds
+// Network stats
+function updateNetworkStats(data) {
+    const sid = data.server_id; const sys = data.status.system || {}; const now = Date.now();
+    const currentUp = sys.net_bytes_sent||0; const currentDown = sys.net_bytes_recv||0;
+    if (!networkStats[sid]) { networkStats[sid]={lastUp:currentUp,lastDown:currentDown,lastTime:now,rateUp:0,rateDown:0}; }
+    else {
+        const prev = networkStats[sid]; const dt = (now-prev.lastTime)/1000;
+        if (dt>0) { let dU=currentUp-prev.lastUp,dD=currentDown-prev.lastDown; if(dU<0)dU=currentUp; if(dD<0)dD=currentDown; prev.rateUp=dU/dt; prev.rateDown=dD/dt; }
+        prev.lastUp=currentUp; prev.lastDown=currentDown; prev.lastTime=now;
+    }
+}
 
-                if (timeDiff > 0) {
-                    let diffUp = currentUp - prev.lastUp;
-                    let diffDown = currentDown - prev.lastDown;
-                    
-                    if (diffUp < 0) diffUp = currentUp;
-                    if (diffDown < 0) diffDown = currentDown;
+// Overview render
+function renderOverview() {
+    const now = Date.now();
+    const serverList = Object.values(servers).sort((a,b) => a.server_id.localeCompare(b.server_id));
+    let healthy=0,totalPeers=0,totalLoad=0,loadCount=0,totalUp=0,totalDown=0,totalRateUp=0,totalRateDown=0,allPeers=[];
+    serverList.forEach(s => {
+        const sys=(s.status||{}).system||{}; const stale=(now-new Date(s.time))>STALE_MS;
+        if(!stale)healthy++;
+        if(s.status&&s.status.peers){totalPeers+=s.status.peers.length;s.status.peers.forEach(p=>allPeers.push({...p,server_id:s.server_id}));}
+        if(sys.load_average){totalLoad+=sys.load_average;loadCount++;}
+        totalUp+=sys.net_bytes_sent||0; totalDown+=sys.net_bytes_recv||0;
+        const ns=networkStats[s.server_id];
+        if(ns&&(now-ns.lastTime)<STALE_MS){totalRateUp+=ns.rateUp;totalRateDown+=ns.rateDown;}
+    });
+    document.getElementById('stat-total-servers').innerText=serverList.length;
+    document.getElementById('stat-healthy').innerText=healthy;
+    document.getElementById('stat-total-peers').innerText=totalPeers;
+    document.getElementById('stat-avg-load').innerText=loadCount>0?(totalLoad/loadCount).toFixed(2):'—';
+    document.getElementById('stat-total-up').innerText=formatBytes(totalUp);
+    document.getElementById('stat-total-down').innerText=formatBytes(totalDown);
+    document.getElementById('stat-rate-up').innerText=formatBytes(totalRateUp)+'/s';
+    document.getElementById('stat-rate-down').innerText=formatBytes(totalRateDown)+'/s';
+    renderTopPeers(allPeers); renderAgentCards(serverList,now); lucide.createIcons();
+}
 
-                    prev.rateUp = diffUp / timeDiff;
-                    prev.rateDown = diffDown / timeDiff;
-                }
-                prev.lastUp = currentUp;
-                prev.lastDown = currentDown;
-                prev.lastTime = now;
-            }
+function renderTopPeers(peers) {
+    const container = document.getElementById('peer-list-container');
+    if (!peers.length) { container.innerHTML='<p style="color:var(--text-3);font-size:12px;font-style:italic;">No peers found.</p>'; return; }
+    peers.sort((a,b)=>(b.receive_bytes+b.transmit_bytes)-(a.receive_bytes+a.transmit_bytes));
+    container.innerHTML = peers.slice(0,10).map(p=>`
+        <div class="peer-li">
+            <div style="min-width:0;flex:1;">
+                <div style="font-size:12px;font-weight:500;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(peerDisplayName(p.public_key))}</div>
+                <div style="font-size:11px;color:var(--text-3);">${escHtml(p.server_id)}</div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:var(--text-2);margin-left:10px;flex-shrink:0;">
+                <div>↑ ${formatBytes(p.receive_bytes)}</div>
+                <div>↓ ${formatBytes(p.transmit_bytes)}</div>
+            </div>
+        </div>`).join('');
+}
 
-            // Update Global Stats Texts
-            let totalUp = 0, totalDown = 0;
-            let totalRateUp = 0, totalRateDown = 0;
-            let allPeers = [];
-
-            Object.values(servers).forEach(s => {
-                const sSys = s.status.system || {};
-                totalUp += (sSys.net_bytes_sent || 0);
-                totalDown += (sSys.net_bytes_recv || 0);
-                
-                if (networkStats[s.server_id]) {
-                    // Only count rate if recent
-                    if (now - networkStats[s.server_id].lastTime < 20000) {
-                        totalRateUp += networkStats[s.server_id].rateUp;
-                        totalRateDown += networkStats[s.server_id].rateDown;
-                    }
-                }
-
-                if (s.status.peers) {
-                    s.status.peers.forEach(p => {
-                        allPeers.push({ ...p, server_id: s.server_id });
-                    });
-                }
-            });
-
-            document.getElementById('stat-total-up').innerText = formatBytes(totalUp);
-            document.getElementById('stat-total-down').innerText = formatBytes(totalDown);
-            document.getElementById('stat-rate-up').innerText = formatBytes(totalRateUp) + '/s';
-            document.getElementById('stat-rate-down').innerText = formatBytes(totalRateDown) + '/s';
-
-            // Update Peer List
-            updatePeerList(allPeers);
-        }
-
-        function updatePeerList(peers) {
-            const container = document.getElementById('peer-list-container');
-            if (peers.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-sm italic">No active peers found.</p>';
-                return;
-            }
-
-            // Sort by usage (desc)
-            peers.sort((a, b) => (b.receive_bytes + b.transmit_bytes) - (a.receive_bytes + a.transmit_bytes));
-
-            let html = '<ul class="divide-y divide-gray-200">';
-            peers.forEach(p => {
-                html += `
-                <li class="py-3 flex justify-between items-center">
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-gray-900 truncate" title="${p.public_key}">
-                            ${p.public_key.substring(0, 8)}...
-                        </p>
-                        <p class="text-xs text-gray-500 truncate">
-                            ${p.endpoint || 'No Endpoint'} <span class="text-indigo-500 text-xs ml-1">${p.persistent_keepalive ? `(KA: ${p.persistent_keepalive}s)` : ''}</span>
-                        </p>
+function renderAgentCards(serverList, now) {
+    const container = document.getElementById('server-list');
+    container.innerHTML = '';
+    if (!serverList.length) { container.innerHTML='<li style="padding:24px;text-align:center;color:var(--text-3);font-size:13px;">No agents connected yet.</li>'; return; }
+    serverList.forEach(s => {
+        const status=s.status||{}; const sys=status.system||{}; const stale=(now-new Date(s.time))>STALE_MS;
+        const cpu=sys.cpu_percent||0; const mem=sys.memory_percent||0; const disk=sys.disk_percent||0;
+        const expanded=expandedServers.has(s.server_id); const peerCount=status.peers?status.peers.length:0;
+        const uptime=uptimeData[s.server_id]; const uptimeTxt=uptime!=null?uptime.toFixed(1)+'%':'—';
+        const uptimeColor=uptime==null?'var(--text-2)':uptime>=99?'var(--success)':uptime>=95?'var(--warning)':'var(--danger)';
+        const ping=sys.ping_latency_ms; const pingTxt=ping>0?ping.toFixed(0)+'ms':'—';
+        const li=document.createElement('li'); li.className='agent-row';
+        li.innerHTML=`
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden;">
+                    <span style="width:7px;height:7px;border-radius:50%;background:${stale?'var(--text-3)':'var(--success)'};flex-shrink:0;${stale?'':'box-shadow:0 0 0 2px rgba(76,175,110,.2)'}"></span>
+                    <div style="min-width:0;flex:1;overflow:hidden;">
+                        <div style="font-size:13px;font-weight:500;color:var(--text-1);display:flex;align-items:center;gap:8px;overflow:hidden;">
+                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s.server_id)}</span>
+                            <span class="badge ${stale?'badge-offline':'badge-online'}" style="flex-shrink:0;">${stale?'Offline':'Online'}</span>
+                            <span style="font-size:11px;color:${uptimeColor};flex-shrink:0;" title="Uptime (24h)">${uptimeTxt} up</span>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(sys.hostname||'-')} · ${escHtml(sys.os||'-')}/${escHtml(sys.arch||'-')} · ${new Date(s.time).toLocaleTimeString()}</div>
                     </div>
-                    <div class="ml-4 flex-shrink-0 text-right">
-                        <p class="text-xs text-gray-500">Up: <span class="text-gray-900">${formatBytes(p.receive_bytes)}</span></p>
-                        <p class="text-xs text-gray-500">Down: <span class="text-gray-900">${formatBytes(p.transmit_bytes)}</span></p>
-                    </div>
-                </li>
-                `;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
-        }
-
-        // Periodic chart update (every 2s)
-        setInterval(() => {
-            if (!trafficChart) return;
-            
-            let totalRateUp = 0, totalRateDown = 0;
-            Object.values(networkStats).forEach(stats => {
-                // Only count active servers (last seen < 20s)
-                if (new Date().getTime() - stats.lastTime < 20000) {
-                    totalRateUp += stats.rateUp;
-                    totalRateDown += stats.rateDown;
-                }
-            });
-
-            const now = new Date().toLocaleTimeString();
-            
-            trafficChart.data.labels.push(now);
-            trafficChart.data.datasets[0].data.push(totalRateUp / 1024); // KB/s
-            trafficChart.data.datasets[1].data.push(totalRateDown / 1024); // KB/s
-
-            if (trafficChart.data.labels.length > 20) {
-                trafficChart.data.labels.shift();
-                trafficChart.data.datasets[0].data.shift();
-                trafficChart.data.datasets[1].data.shift();
-            }
-            trafficChart.update();
-        }, 2000);
-
-        function formatBytes(bytes) {
-            if (bytes === undefined || bytes === null) return 'N/A';
-            if (bytes === 0) return '0 B';
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-            return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-        }
-
-        function getStatusColor(percent) {
-            if (percent > 90) return 'bg-red-500';
-            if (percent > 70) return 'bg-yellow-500';
-            return 'bg-green-500'; // Changed to green for healthy/low usage
-        }
-        
-        // Progress bar component
-        function progressBar(label, percent, valueText) {
-            const colorClass = getStatusColor(percent);
-            return `
+                </div>
+                <button onclick="togglePeers('${escHtml(s.server_id)}')" class="btn" style="font-size:11px;flex-shrink:0;">
+                    <i data-lucide="${expanded?'chevron-up':'chevron-down'}" style="width:12px;height:12px;"></i>
+                    ${peerCount} peer${peerCount!==1?'s':''}
+                </button>
+                <button onclick="openClientsModal('${escHtml(s.server_id)}')" class="btn" style="font-size:11px;flex-shrink:0;">
+                    <i data-lucide="users" style="width:12px;height:12px;"></i>Clients
+                </button>
+            </div>
+            <div class="agent-metrics-grid">
+                ${metricBar('CPU',cpu,cpu.toFixed(1)+'%')}
+                ${metricBar('Memory',mem,mem.toFixed(1)+'%')}
+                ${metricBar('Disk',disk,disk.toFixed(1)+'%')}
                 <div>
-                    <div class="flex justify-between mb-1">
-                        <span class="text-xs font-medium text-gray-500">${label}</span>
-                        <span class="text-xs font-medium text-gray-700">${valueText}</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                        <div class="${colorClass} h-1.5 rounded-full transition-all duration-500" style="width: ${Math.min(percent, 100)}%"></div>
-                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--text-2);">Load</span><span style="color:var(--text-1);">${sys.load_average?sys.load_average.toFixed(2):'—'}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--text-2);">Uptime</span><span style="color:var(--text-1);">${formatUptime(sys.uptime)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--text-2);">Ping</span><span style="color:${ping>100?'var(--warning)':ping>0?'var(--success)':'var(--text-2)'};">${pingTxt}</span></div>
                 </div>
-            `;
+            </div>
+            ${expanded&&status.peers&&status.peers.length?renderPeerTable(status.peers,s.server_id):''}
+        `;
+        container.appendChild(li);
+    });
+}
+
+function togglePeers(serverId) {
+    if(expandedServers.has(serverId))expandedServers.delete(serverId); else expandedServers.add(serverId);
+    renderOverview();
+}
+
+function renderPeerTable(peers, serverId) {
+    return `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table style="width:100%;min-width:500px;border-collapse:collapse;font-size:12px;">
+            <thead><tr>
+                <th style="text-align:left;color:var(--text-3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:0 8px 6px 0;">Peer</th>
+                <th style="text-align:left;color:var(--text-3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:0 8px 6px 0;">Status</th>
+                <th style="text-align:left;color:var(--text-3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:0 8px 6px 0;">Endpoint</th>
+                <th style="text-align:right;color:var(--text-3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:0 0 6px 0;">↑ RX</th>
+                <th style="text-align:right;color:var(--text-3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:0 0 6px 8px;">↓ TX</th>
+                <th style="text-align:right;color:var(--text-3);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:0 0 6px 0;"></th>
+            </tr></thead>
+            <tbody>
+                ${peers.map(p=>{
+                    const hsSecs=handshakeAge(p.latest_handshake);
+                    const dotColor=hsSecs===null?'var(--text-3)':hsSecs<180?'var(--success)':hsSecs<900?'var(--warning)':'var(--danger)';
+                    const hsText=hsSecs===null?'never':timeAgo(p.latest_handshake);
+                    const meta=peerMetas[p.public_key]||{};
+                    const label=meta.label||peerLabels[p.public_key]||'';
+                    const isFullTunnel=p.allowed_ips&&p.allowed_ips.some(ip=>ip==='0.0.0.0/0');
+                    const isExpired=meta.expires_at&&new Date(meta.expires_at)<new Date();
+                    const hasQuota=meta.quota_bytes>0;
+                    const usedBytes=p.receive_bytes+p.transmit_bytes;
+                    const quotaPct=hasQuota?Math.min(100,usedBytes/meta.quota_bytes*100):0;
+                    const adminOnly=userRole==='admin';
+                    return `<tr>
+                        <td style="padding:5px 8px 5px 0;border-top:1px solid var(--border);font-family:monospace;font-size:11px;">
+                            <div style="display:flex;align-items:center;gap:4px;">
+                                ${isFullTunnel?`<span title="Full tunnel (kill switch)" style="color:var(--accent);display:flex;"><i data-lucide="shield" style="width:10px;height:10px;"></i></span>`:''}
+                                <span style="color:var(--accent);cursor:pointer;" data-pubkey="${escHtml(p.public_key)}" onclick="editPeerLabel(this)" title="${escHtml(p.public_key)}">${escHtml(label||p.public_key.substring(0,12)+'…')}</span>
+                                ${isExpired?`<span class="badge badge-danger" style="font-size:9px;">Expired</span>`:''}
+                                ${meta.notes?`<span title="${escHtml(meta.notes)}" style="color:var(--text-3);cursor:help;"><i data-lucide="message-square" style="width:10px;height:10px;"></i></span>`:''}
+                            </div>
+                            ${hasQuota?`<div class="quota-bar"><div class="quota-fill" style="width:${quotaPct}%;background:${quotaPct>90?'var(--danger)':quotaPct>70?'var(--warning)':'var(--accent)'};"></div></div>`:''}
+                        </td>
+                        <td style="padding:5px 8px 5px 0;border-top:1px solid var(--border);">
+                            <span style="display:flex;align-items:center;gap:5px;">
+                                <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
+                                <span style="color:var(--text-2);font-size:11px;">${escHtml(hsText)}</span>
+                            </span>
+                        </td>
+                        <td style="padding:5px 8px 5px 0;border-top:1px solid var(--border);color:var(--text-2);font-size:11px;">${escHtml(p.endpoint||'—')}</td>
+                        <td style="padding:5px 0 5px 0;border-top:1px solid var(--border);text-align:right;color:var(--text-1);">${formatBytes(p.receive_bytes)}</td>
+                        <td style="padding:5px 0 5px 8px;border-top:1px solid var(--border);text-align:right;color:var(--text-1);">${formatBytes(p.transmit_bytes)}</td>
+                        <td style="padding:5px 0 5px 0;border-top:1px solid var(--border);text-align:right;">
+                            ${adminOnly?`<button onclick="openPeerModal('${escHtml(p.public_key)}','${escHtml(serverId)}')" class="btn btn-sm" style="font-size:10px;padding:2px 6px;"><i data-lucide="settings" style="width:10px;height:10px;"></i></button>`:''}
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+        </div>
+    </div>`;
+}
+
+function editPeerLabel(el) {
+    if(userRole!=='admin')return;
+    const pubkey=el.dataset.pubkey; const current=(peerMetas[pubkey]&&peerMetas[pubkey].label)||peerLabels[pubkey]||'';
+    const input=document.createElement('input'); input.type='text'; input.value=current;
+    input.className='peer-label-input'; input.placeholder='Label (blank to clear)'; input.style.minWidth='100px';
+    el.replaceWith(input); input.focus(); input.select();
+    const save=()=>savePeerLabel(pubkey,input.value);
+    input.addEventListener('blur',save);
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save();}if(e.key==='Escape')renderOverview();});
+}
+
+// Peer meta modal
+function openPeerModal(pubkey, serverId) {
+    const meta = peerMetas[pubkey] || {};
+    document.getElementById('peer-modal-pubkey').value = pubkey;
+    document.getElementById('peer-modal-serverid').value = serverId;
+    document.getElementById('peer-modal-title').innerText = 'Edit: ' + (meta.label || pubkey.substring(0,16) + '…');
+    document.getElementById('peer-modal-label').value = meta.label || peerLabels[pubkey] || '';
+    document.getElementById('peer-modal-notes').value = meta.notes || '';
+    document.getElementById('peer-modal-quota').value = meta.quota_bytes ? (meta.quota_bytes / (1024**3)).toFixed(2) : '0';
+    if (meta.expires_at) {
+        const d = new Date(meta.expires_at);
+        document.getElementById('peer-modal-expires').value = d.toISOString().slice(0,16);
+    } else {
+        document.getElementById('peer-modal-expires').value = '';
+    }
+    document.getElementById('peer-modal-error').classList.add('hidden');
+    document.getElementById('peer-modal').classList.remove('hidden');
+}
+function closePeerModal() { document.getElementById('peer-modal').classList.add('hidden'); }
+async function submitPeerMeta() {
+    const pubkey = document.getElementById('peer-modal-pubkey').value;
+    const label = document.getElementById('peer-modal-label').value.trim();
+    const notes = document.getElementById('peer-modal-notes').value.trim();
+    const expiresStr = document.getElementById('peer-modal-expires').value;
+    const quotaGB = parseFloat(document.getElementById('peer-modal-quota').value) || 0;
+    const quotaBytes = Math.round(quotaGB * 1024 * 1024 * 1024);
+    const errDiv = document.getElementById('peer-modal-error');
+    errDiv.classList.add('hidden');
+    const body = { public_key: pubkey, label, notes, quota_bytes: quotaBytes };
+    if (expiresStr) body.expires_at = new Date(expiresStr).toISOString();
+    try {
+        const res = await apiFetch('/api/peer-meta', 'PUT', body);
+        if (res.ok) {
+            await fetchPeerMetas();
+            if (label) { peerLabels[pubkey] = label; }
+            closePeerModal();
+            renderOverview();
+        } else { errDiv.innerText = await res.text() || 'Failed'; errDiv.classList.remove('hidden'); }
+    } catch(_) { errDiv.innerText = 'Network error'; errDiv.classList.remove('hidden'); }
+}
+
+// Traffic chart
+let chartServerOrder = [];
+function initTrafficChart() {
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    trafficChart = new Chart(ctx, {
+        type:'line', data:{labels:[],datasets:[]},
+        options:{
+            responsive:true, maintainAspectRatio:false, animation:false,
+            interaction:{mode:'index',intersect:false},
+            scales:{
+                y:{ beginAtZero:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8A8F98',font:{size:10},callback:v=>formatBytes(v*1024)+'/s'}, border:{color:'transparent'} },
+                x:{ grid:{display:false}, ticks:{color:'#8A8F98',font:{size:10}}, border:{color:'transparent'} }
+            },
+            plugins:{ legend:{position:'top',labels:{color:'#8A8F98',font:{size:11},boxWidth:10,padding:12}} }
         }
+    });
+}
 
-        function render() {
-            const container = document.getElementById('server-list');
-            container.innerHTML = '';
-            
-            const serverList = Object.values(servers).sort((a,b) => a.server_id.localeCompare(b.server_id));
-            
-            // Update Stats
-            document.getElementById('stat-total-servers').innerText = serverList.length;
-            
-            let healthyCount = 0;
-            let totalPeers = 0;
-            let totalLoad = 0;
-            let loadCount = 0;
+setInterval(()=>{
+    if(!trafficChart)return;
+    const now=Date.now();
+    const serverList=Object.values(servers).sort((a,b)=>a.server_id.localeCompare(b.server_id));
+    const currentIds=serverList.map(s=>s.server_id);
+    if(JSON.stringify(currentIds)!==JSON.stringify(chartServerOrder)){
+        chartServerOrder=currentIds; trafficChart.data.datasets=[];
+        currentIds.forEach((sid,i)=>{
+            const c=SERVER_COLORS[i%SERVER_COLORS.length];
+            trafficChart.data.datasets.push({label:sid+' ↑',data:[],borderColor:c.border,backgroundColor:c.bg,fill:false,tension:0.4,borderDash:[]});
+            trafficChart.data.datasets.push({label:sid+' ↓',data:[],borderColor:c.border,backgroundColor:c.bg,fill:false,tension:0.4,borderDash:[4,2]});
+        });
+    }
+    trafficChart.data.labels.push(new Date().toLocaleTimeString());
+    currentIds.forEach((sid,i)=>{
+        const ns=networkStats[sid];
+        const rU=ns&&(now-ns.lastTime)<STALE_MS?ns.rateUp/1024:0;
+        const rD=ns&&(now-ns.lastTime)<STALE_MS?ns.rateDown/1024:0;
+        trafficChart.data.datasets[i*2].data.push(rU);
+        trafficChart.data.datasets[i*2+1].data.push(rD);
+    });
+    if(trafficChart.data.labels.length>30){trafficChart.data.labels.shift();trafficChart.data.datasets.forEach(d=>d.data.shift());}
+    trafficChart.update();
+},2000);
 
-            serverList.forEach(s => {
-                const status = s.status || {};
-                const sys = status.system || {};
-                const isStale = (new Date() - new Date(s.time)) > 20000; // 20s timeout
-                
-                if (!isStale) healthyCount++;
-                if (status.peers) totalPeers += status.peers.length;
-                if (sys.load_average) {
-                    totalLoad += sys.load_average;
-                    loadCount++;
-                }
+// History tab
+function populateHistoryServerSelect() {
+    const sel=document.getElementById('history-server'); const current=sel.value;
+    const ids=Object.keys(servers).sort();
+    sel.innerHTML='<option value="">Select server...</option>'+ids.map(id=>`<option value="${escHtml(id)}" ${id===current?'selected':''}>${escHtml(id)}</option>`).join('');
+}
 
-                const row = document.createElement('li');
-                row.className = "px-4 py-4 sm:px-6 hover:bg-gray-50 transition duration-150 ease-in-out";
-                
-                // Calculate percentages for bars
-                const cpu = sys.cpu_percent || 0;
-                const mem = sys.memory_percent || 0;
-                const disk = sys.disk_percent || 0;
-                
-                const memText = `${formatBytes(sys.memory_used)} / ${formatBytes(sys.memory_total)}`;
+function setHistoryRange(h) {
+    historyHours=h;
+    [1,6,24].forEach(n=>document.getElementById('hr-'+n).classList.remove('active'));
+    document.getElementById('hr-'+h).classList.add('active');
+    loadHistory();
+}
 
-                row.innerHTML = `
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center min-w-0 gap-4">
-                             <div class="flex-shrink-0">
-                                <span class="inline-flex items-center justify-center h-12 w-12 rounded-full ${isStale ? 'bg-gray-100' : 'bg-indigo-100'}">
-                                    <i data-lucide="server" class="${isStale ? 'text-gray-400' : 'text-indigo-600'} h-6 w-6"></i>
-                                </span>
-                             </div>
-                             <div>
-                                <div class="text-lg font-medium text-indigo-600 truncate flex items-center gap-2">
-                                    ${s.server_id}
-                                    ${isStale ? 
-                                        '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Offline</span>' : 
-                                        '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Online</span>'
-                                    }
-                                </div>
-                                <div class="flex items-center text-sm text-gray-500 mt-1">
-                                    <i data-lucide="monitor" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"></i>
-                                    ${sys.hostname || '-'} (${sys.os || '-'}/${sys.arch || '-'})
-                                </div>
-                             </div>
-                        </div>
-                        <div class="text-right text-sm text-gray-500">
-                            <div class="flex items-center justify-end gap-1 mb-1">
-                                <i data-lucide="clock" class="h-4 w-4 text-gray-400"></i>
-                                <span>${new Date(s.time).toLocaleTimeString()}</span>
-                            </div>
-                            <div class="text-xs text-gray-400">Last Seen</div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 mt-4 border-t border-gray-100 pt-4">
-                        ${progressBar('CPU Usage', cpu, cpu.toFixed(1) + '%')}
-                        ${progressBar('Memory Usage', mem, mem.toFixed(1) + '%')}
-                        ${progressBar('Disk Usage', disk, disk.toFixed(1) + '%')}
-                        
-                        <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="text-xs font-medium text-gray-500">Load Avg</span>
-                                <span class="text-xs font-medium text-gray-700">${sys.load_average ? sys.load_average.toFixed(2) : '-'}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-xs font-medium text-gray-500">Peers</span>
-                                <span class="text-xs font-medium text-gray-700">${status.peers ? status.peers.length : 0}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
+async function loadHistory() {
+    const serverId=document.getElementById('history-server').value;
+    if(!serverId) return;
+    currentHistoryServer = serverId;
+    try {
+        const res=await apiFetch(`/api/history?server_id=${encodeURIComponent(serverId)}&hours=${historyHours}`);
+        if(!res.ok) return;
+        const points=await res.json();
+        currentHistoryPoints = points;
+        renderHistoryCharts(serverId,points);
+        populatePeerHistorySelect(serverId);
+    } catch(_){}
+}
 
-            // Update global stats
-            document.getElementById('stat-healthy').innerText = healthyCount;
-            document.getElementById('stat-total-peers').innerText = totalPeers;
-            document.getElementById('stat-avg-load').innerText = loadCount > 0 ? (totalLoad / loadCount).toFixed(2) : '-';
+async function exportCSV() {
+    const serverId=document.getElementById('history-server').value;
+    if(!serverId){alert('Select a server first.');return;}
+    const url=`/api/history/export?server_id=${encodeURIComponent(serverId)}&hours=${historyHours}`;
+    const res=await apiFetch(url);
+    if(!res.ok){alert('Export failed.');return;}
+    const blob=await res.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`sentra-${serverId}-${historyHours}h.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
 
-            // Re-render icons for new elements
-            lucide.createIcons();
+function renderHistoryCharts(serverId,points) {
+    document.getElementById('history-empty').classList.add('hidden');
+    const hc=document.getElementById('history-charts'); hc.classList.remove('hidden'); hc.style.display='flex';
+    const labels=points.map(p=>{const d=new Date(p.time);return historyHours<=1?d.toLocaleTimeString():d.toLocaleDateString([],{month:'short',day:'numeric'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});});
+    const netRateUp=[],netRateDown=[];
+    for(let i=0;i<points.length;i++){
+        if(i===0){netRateUp.push(0);netRateDown.push(0);continue;}
+        const dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000; if(dt<=0){netRateUp.push(0);netRateDown.push(0);continue;}
+        let dU=points[i].net_bytes_sent-points[i-1].net_bytes_sent; let dD=points[i].net_bytes_recv-points[i-1].net_bytes_recv;
+        if(dU<0)dU=0; if(dD<0)dD=0; netRateUp.push(dU/dt/1024); netRateDown.push(dD/dt/1024);
+    }
+    const c=SERVER_COLORS[0];
+    ['histCpuChart','histMemChart','histDiskChart','histNetChart','histPingChart','histPeerChart'].forEach(id=>destroyHistChart(id));
+    histCharts['cpu']=makeHistChart('histCpuChart',labels,[{label:'CPU %',data:points.map(p=>p.cpu_percent),borderColor:c.border,backgroundColor:c.bg}],'%',100);
+    histCharts['mem']=makeHistChart('histMemChart',labels,[{label:'Memory %',data:points.map(p=>p.memory_percent),borderColor:'rgb(76,175,110)',backgroundColor:'rgba(76,175,110,0.08)'}],'%',100);
+    histCharts['disk']=makeHistChart('histDiskChart',labels,[{label:'Disk %',data:points.map(p=>p.disk_percent),borderColor:'rgb(232,160,66)',backgroundColor:'rgba(232,160,66,0.08)'}],'%',100);
+    histCharts['net']=makeHistChart('histNetChart',labels,[{label:'Upload KB/s',data:netRateUp,borderColor:'rgb(200,168,130)',backgroundColor:'rgba(200,168,130,0.08)'},{label:'Download KB/s',data:netRateDown,borderColor:'rgb(232,160,66)',backgroundColor:'rgba(232,160,66,0.08)'}],'KB/s',null);
+    histCharts['ping']=makeHistChart('histPingChart',labels,[{label:'Ping ms',data:points.map(p=>p.ping_latency_ms>0?p.ping_latency_ms:null),borderColor:'rgb(139,92,246)',backgroundColor:'rgba(139,92,246,0.08)',spanGaps:true}],'ms',null);
+    histCharts['peer']=makeHistChart('histPeerChart',labels,[{label:'Peers',data:points.map(p=>p.peer_count),borderColor:'rgb(236,72,153)',backgroundColor:'rgba(236,72,153,0.08)',stepped:true}],'',null);
+}
+
+function populatePeerHistorySelect(serverId) {
+    const sel = document.getElementById('peer-history-select');
+    const s = servers[serverId];
+    if (!s || !s.status || !s.status.peers || !s.status.peers.length) {
+        sel.innerHTML = '<option value="">No peers</option>';
+        return;
+    }
+    sel.innerHTML = '<option value="">Select peer...</option>' + s.status.peers.map(p => {
+        const name = peerDisplayName(p.public_key);
+        return `<option value="${escHtml(p.public_key)}">${escHtml(name)}</option>`;
+    }).join('');
+}
+
+async function loadPeerHistory() {
+    const serverId = document.getElementById('history-server').value;
+    const pubkey = document.getElementById('peer-history-select').value;
+    const empty = document.getElementById('peer-history-empty');
+    const wrap = document.getElementById('peer-history-chart-wrap');
+    if (!serverId || !pubkey) { empty.classList.remove('hidden'); wrap.classList.add('hidden'); return; }
+    try {
+        const res = await apiFetch(`/api/peer-history?server_id=${encodeURIComponent(serverId)}&public_key=${encodeURIComponent(pubkey)}&hours=${Math.min(historyHours,24)}`);
+        if (!res.ok) return;
+        const points = await res.json();
+        empty.classList.add('hidden'); wrap.classList.remove('hidden');
+        const labels = points.map(p => new Date(p.time).toLocaleTimeString());
+        const rxRate=[], txRate=[];
+        for(let i=0;i<points.length;i++){
+            if(i===0){rxRate.push(0);txRate.push(0);continue;}
+            const dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;
+            if(dt<=0){rxRate.push(0);txRate.push(0);continue;}
+            let dR=points[i].receive_bytes-points[i-1].receive_bytes;
+            let dT=points[i].transmit_bytes-points[i-1].transmit_bytes;
+            if(dR<0)dR=0; if(dT<0)dT=0;
+            rxRate.push(dR/dt/1024); txRate.push(dT/dt/1024);
         }
+        const e = Chart.getChart('peerHistChart'); if(e)e.destroy();
+        peerHistChart = makeHistChart('peerHistChart', labels, [
+            {label:'RX KB/s',data:rxRate,borderColor:'rgb(76,175,110)',backgroundColor:'rgba(76,175,110,0.08)'},
+            {label:'TX KB/s',data:txRate,borderColor:'rgb(200,168,130)',backgroundColor:'rgba(200,168,130,0.08)'}
+        ], 'KB/s', null);
+    } catch(_){}
+}
 
-        init();
-    </script>
+function destroyHistChart(id){const e=Chart.getChart(id);if(e)e.destroy();}
+function makeHistChart(id,labels,datasets,unit,maxY){
+    const ctx=document.getElementById(id).getContext('2d');
+    return new Chart(ctx,{
+        type:'line',
+        data:{labels,datasets:datasets.map(d=>({fill:true,tension:0.3,pointRadius:labels.length>100?0:2,borderWidth:1.5,...d}))},
+        options:{
+            responsive:true, maintainAspectRatio:false, animation:false,
+            scales:{
+                y:{beginAtZero:true,max:maxY||undefined,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8A8F98',font:{size:10},callback:v=>v+(unit?' '+unit:'')},border:{color:'transparent'}},
+                x:{grid:{display:false},ticks:{maxTicksLimit:8,maxRotation:0,color:'#8A8F98',font:{size:10}},border:{color:'transparent'}}
+            },
+            plugins:{legend:{position:'top',labels:{color:'#8A8F98',font:{size:11},boxWidth:10,padding:12}}}
+        }
+    });
+}
+
+// Users tab
+async function loadUsers(){
+    try{const res=await apiFetch('/api/users');if(!res.ok)return;const users=await res.json();renderUsers(users);}catch(_){}
+}
+function renderUsers(users){
+    const tbody=document.getElementById('users-table-body');
+    if(!users||!users.length){tbody.innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px;">No users found.</td></tr>';return;}
+    tbody.innerHTML=users.map(u=>`
+        <tr>
+            <td><div style="font-size:13px;color:var(--text-1);">${escHtml(u.email)}</div><div style="font-size:11px;color:var(--text-2);">${escHtml(u.name||'')}</div></td>
+            <td><span class="badge ${u.role==='admin'?'badge-accent':''}" style="${u.role!=='admin'?'background:rgba(255,255,255,0.05);color:var(--text-2);':''}">${escHtml(u.role)}</span></td>
+            <td style="font-size:12px;color:var(--text-2);">${new Date(u.created_at).toLocaleDateString()}</td>
+            <td style="text-align:right;"><div style="display:flex;justify-content:flex-end;gap:6px;">
+                <button onclick="openPwdModal('${escHtml(u.id)}')" class="btn">Change Password</button>
+                <button onclick="deleteUser('${escHtml(u.id)}','${escHtml(u.email)}')" class="btn btn-danger">Delete</button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function showAddUser(){document.getElementById('add-user-form').classList.remove('hidden');}
+function hideAddUser(){document.getElementById('add-user-form').classList.add('hidden');}
+
+async function createUser(){
+    const email=document.getElementById('new-email').value.trim();
+    const name=document.getElementById('new-name').value.trim();
+    const password=document.getElementById('new-password').value;
+    const role=document.getElementById('new-role').value;
+    const errorDiv=document.getElementById('add-user-error'); errorDiv.classList.add('hidden');
+    if(!email||!password){errorDiv.innerText='Email and password are required.';errorDiv.classList.remove('hidden');return;}
+    try{
+        const res=await apiFetch('/api/users','POST',{email,name,password,role});
+        if(res.ok){document.getElementById('new-email').value='';document.getElementById('new-name').value='';document.getElementById('new-password').value='';hideAddUser();loadUsers();}
+        else{const msg=await res.text();errorDiv.innerText=msg||'Failed to create user.';errorDiv.classList.remove('hidden');}
+    }catch(_){errorDiv.innerText='Network error.';errorDiv.classList.remove('hidden');}
+}
+
+async function deleteUser(id,email){
+    if(!confirm(`Delete user ${email}?`))return;
+    try{const res=await apiFetch(`/api/users/${encodeURIComponent(id)}`,'DELETE');if(res.ok)loadUsers();else alert(await res.text());}catch(_){}
+}
+
+function openPwdModal(uid){document.getElementById('pwd-modal-uid').value=uid;document.getElementById('pwd-new').value='';document.getElementById('pwd-modal-error').classList.add('hidden');document.getElementById('pwd-modal').classList.remove('hidden');}
+function closePwdModal(){document.getElementById('pwd-modal').classList.add('hidden');}
+
+async function submitChangePassword(){
+    const id=document.getElementById('pwd-modal-uid').value; const pwd=document.getElementById('pwd-new').value;
+    const errDiv=document.getElementById('pwd-modal-error'); errDiv.classList.add('hidden');
+    if(!pwd){errDiv.innerText='Password cannot be empty.';errDiv.classList.remove('hidden');return;}
+    try{
+        const res=await apiFetch(`/api/users/${encodeURIComponent(id)}/password`,'PUT',{password:pwd});
+        if(res.ok)closePwdModal(); else{errDiv.innerText=await res.text()||'Failed.';errDiv.classList.remove('hidden');}
+    }catch(_){errDiv.innerText='Network error.';errDiv.classList.remove('hidden');}
+}
+
+// Alert config
+async function loadAlertConfig() {
+    try {
+        const res = await apiFetch('/api/alert-config');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        const el = document.getElementById('alert-status-content');
+        if (cfg.configured) {
+            el.innerHTML = `<span style="color:var(--success);">● Configured</span> — alerts sent to <strong>${escHtml(cfg.alert_email)}</strong>`;
+        } else {
+            el.innerHTML = `<span style="color:var(--text-3);">Not configured</span> — set <code>SENTRA_SMTP_HOST</code>, <code>SENTRA_SMTP_USER</code>, <code>SENTRA_SMTP_PASS</code>, <code>SENTRA_ALERT_EMAIL</code> in .env to enable offline alerts.`;
+        }
+    } catch(_) {}
+}
+
+// Audit log tab
+async function loadAudit() {
+    const tbody = document.getElementById('audit-table-body');
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3);">Loading...</td></tr>';
+    try {
+        const res = await apiFetch('/api/audit?limit=200');
+        if (!res.ok) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--danger);font-size:12px;">Error loading audit log (${res.status}).</td></tr>`;
+            return;
+        }
+        const logs = await res.json();
+        renderAudit(logs);
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--danger);font-size:12px;">Failed to load audit log.</td></tr>';
+    }
+}
+
+function renderAudit(logs) {
+    const tbody = document.getElementById('audit-table-body');
+    if (!logs || !logs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px;">No audit entries yet.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = logs.map(l => {
+        const actionColor = l.action.includes('fail') ? 'var(--danger)' : l.action.includes('delete') ? 'var(--warning)' : 'var(--text-1)';
+        return `<tr>
+            <td style="font-size:11px;color:var(--text-2);white-space:nowrap;">${new Date(l.created_at).toLocaleString()}</td>
+            <td style="font-size:12px;">${escHtml(l.user_email||'—')}</td>
+            <td style="font-size:12px;font-weight:500;color:${actionColor};">${escHtml(l.action)}</td>
+            <td style="font-size:11px;color:var(--text-2);">${escHtml(l.details||'')}</td>
+            <td style="font-size:11px;color:var(--text-3);font-family:monospace;">${escHtml(l.ip||'')}</td>
+        </tr>`;
+    }).join('');
+}
+
+// Utilities
+function apiFetch(url,method='GET',body=null){
+    const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}};
+    if(body)opts.body=JSON.stringify(body); return fetch(url,opts);
+}
+function formatBytes(bytes){if(!bytes||bytes===0)return'0 B';const s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(bytes)/Math.log(1024));return(bytes/Math.pow(1024,i)).toFixed(1)+' '+s[i];}
+function formatUptime(secs){if(!secs)return'—';const d=Math.floor(secs/86400);const h=Math.floor((secs%86400)/3600);if(d>0)return d+'d '+h+'h';const m=Math.floor((secs%3600)/60);if(h>0)return h+'h '+m+'m';return m+'m';}
+function handshakeAge(dateStr){if(!dateStr)return null;const d=new Date(dateStr);if(d.getFullYear()<2000)return null;return Math.floor((Date.now()-d)/1000);}
+function timeAgo(dateStr){const secs=handshakeAge(dateStr);if(secs===null)return'never';if(secs<60)return secs+'s ago';if(secs<3600)return Math.floor(secs/60)+'m ago';if(secs<86400)return Math.floor(secs/3600)+'h ago';return Math.floor(secs/86400)+'d ago';}
+function metricBar(label,pct,text){const c=pct>90?'bar-r':pct>70?'bar-y':'bar-g';return`<div class="metric-row"><div class="metric-head"><span class="metric-lbl">${label}</span><span class="metric-val">${text}</span></div><div class="bar-bg"><div class="bar-fill ${c}" style="width:${Math.min(pct,100)}%"></div></div></div>`;}
+function escHtml(str){if(!str)return'';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function copyText(elementId){
+    const text=document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(text).then(()=>{
+        const btn=event.currentTarget; const icon=btn.querySelector('i');
+        if(icon){icon.setAttribute('data-lucide','check');lucide.createIcons();setTimeout(()=>{icon.setAttribute('data-lucide','copy');lucide.createIcons();},1500);}
+    });
+}
+
+async function loadTunnelTab(){}
+
+// VPN Clients Modal
+let currentClientsServer = null;
+
+async function openClientsModal(serverID) {
+    currentClientsServer = serverID;
+    document.getElementById('clients-modal-title').textContent = 'VPN Clients — ' + serverID;
+    document.getElementById('clients-modal-body').innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-3);font-size:12px;">Loading...</div>';
+    document.getElementById('clients-modal').classList.remove('hidden');
+    await refreshClients();
+}
+
+function closeClientsModal() {
+    document.getElementById('clients-modal').classList.add('hidden');
+    currentClientsServer = null;
+}
+
+async function refreshClients() {
+    const serverID = currentClientsServer;
+    if (!serverID) return;
+    try {
+        const res = await apiFetch(`/api/wg-clients/${encodeURIComponent(serverID)}`);
+        if (!res.ok) { document.getElementById('clients-modal-body').innerHTML = `<div style="padding:16px;text-align:center;color:var(--danger);font-size:12px;">Error ${res.status}</div>`; return; }
+        const clients = await res.json();
+        renderClients(serverID, clients);
+    } catch(e) {
+        document.getElementById('clients-modal-body').innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger);font-size:12px;">Failed to load clients.</div>';
+    }
+}
+
+function renderClients(serverID, clients) {
+    const body = document.getElementById('clients-modal-body');
+    if (!clients || !clients.length) {
+        body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-3);font-size:12px;">No clients configured.</div>';
+        return;
+    }
+    body.innerHTML = clients.map(c => {
+        const hs = c.latestHandshakeAt ? timeAgo(c.latestHandshakeAt) : 'never';
+        const rx = formatBytes(c.transferRx), tx = formatBytes(c.transferTx);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:500;color:var(--text-1);">${escHtml(c.name)}</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${escHtml(c.address)} · last: ${hs} · ↓${rx} ↑${tx}</div>
+            </div>
+            <button onclick="showQR('${escHtml(serverID)}','${escHtml(c.id)}','${escHtml(c.name)}')" class="btn btn-sm" title="QR Code">
+                <i data-lucide="qr-code" style="width:12px;height:12px;"></i>
+            </button>
+            <button onclick="toggleClient('${escHtml(serverID)}','${escHtml(c.id)}',${!c.enabled})"
+                class="btn btn-sm ${c.enabled?'btn-primary':''}" title="${c.enabled?'Disable':'Enable'}">
+                ${c.enabled?'Enabled':'Disabled'}
+            </button>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+async function addClient() {
+    const name = document.getElementById('new-client-name').value.trim();
+    const errEl = document.getElementById('clients-modal-error');
+    errEl.classList.add('hidden');
+    if (!name) { errEl.textContent = 'Enter a name.'; errEl.classList.remove('hidden'); return; }
+    const serverID = currentClientsServer;
+    const res = await apiFetch(`/api/wg-clients/${encodeURIComponent(serverID)}`, 'POST', {name});
+    if (!res.ok) { errEl.textContent = 'Failed to create client.'; errEl.classList.remove('hidden'); return; }
+    const client = await res.json();
+    document.getElementById('new-client-name').value = '';
+    await refreshClients();
+    if (client && client.id) showQR(serverID, client.id, name);
+}
+
+async function toggleClient(serverID, clientID, enable) {
+    const action = enable ? 'enable' : 'disable';
+    await apiFetch(`/api/wg-clients/${encodeURIComponent(serverID)}/${encodeURIComponent(clientID)}/${action}`, 'POST');
+    await refreshClients();
+}
+
+async function showQR(serverID, clientID, name) {
+    document.getElementById('qr-modal-title').textContent = name;
+    document.getElementById('qr-modal-body').innerHTML = '<div style="padding:16px;color:var(--text-3);font-size:12px;">Loading...</div>';
+    document.getElementById('qr-modal').classList.remove('hidden');
+    try {
+        const res = await apiFetch(`/api/wg-clients/${encodeURIComponent(serverID)}/${encodeURIComponent(clientID)}/qrcode`);
+        if (!res.ok) { document.getElementById('qr-modal-body').innerHTML = '<div style="color:var(--danger);font-size:12px;">Failed to load QR code.</div>'; return; }
+        const svg = await res.text();
+        document.getElementById('qr-modal-body').innerHTML = svg;
+    } catch(e) {
+        document.getElementById('qr-modal-body').innerHTML = '<div style="color:var(--danger);font-size:12px;">Error loading QR code.</div>';
+    }
+}
+
+function closeQRModal() {
+    document.getElementById('qr-modal').classList.add('hidden');
+}
+
+init();
+</script>
 </body>
 </html>

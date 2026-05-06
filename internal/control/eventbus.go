@@ -1,27 +1,49 @@
 package control
 
 import (
+	"sync"
+
 	"github.com/ChronoCoders/sentra/internal/models"
 )
 
 type EventBus struct {
-	ch chan models.StatusEvent
+	mu   sync.RWMutex
+	subs []chan models.StatusEvent
+	in   chan models.StatusEvent
 }
 
 func NewEventBus() *EventBus {
-	return &EventBus{
-		ch: make(chan models.StatusEvent, 100),
+	b := &EventBus{
+		in: make(chan models.StatusEvent, 100),
+	}
+	go b.dispatch()
+	return b
+}
+
+func (b *EventBus) dispatch() {
+	for event := range b.in {
+		b.mu.RLock()
+		for _, ch := range b.subs {
+			select {
+			case ch <- event:
+			default:
+			}
+		}
+		b.mu.RUnlock()
 	}
 }
 
 func (b *EventBus) Publish(event models.StatusEvent) {
 	select {
-	case b.ch <- event:
+	case b.in <- event:
 	default:
-		// Drop event if buffer full
 	}
 }
 
 func (b *EventBus) Subscribe() <-chan models.StatusEvent {
-	return b.ch
+	ch := make(chan models.StatusEvent, 100)
+	b.mu.Lock()
+	b.subs = append(b.subs, ch)
+	b.mu.Unlock()
+	return ch
 }

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"net"
 	"time"
 
 	"github.com/ChronoCoders/sentra/internal/models"
@@ -12,7 +13,7 @@ import (
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/shirou/gopsutil/v4/net"
+	gopsnet "github.com/shirou/gopsutil/v4/net"
 )
 
 type Agent struct {
@@ -39,7 +40,6 @@ func (a *Agent) Run(ctx context.Context) error {
 			if a.wg != nil {
 				s, err := a.wg.GetStatus(ctx)
 				if err != nil {
-					// Only log warning if it's NOT the "file does not exist" error which is expected in containers without WG
 					errMsg := err.Error()
 					if errMsg != "failed to get device wg0: file does not exist" && errMsg != "link not found" {
 						log.Warn().Err(err).Msg("failed to get wireguard status (continuing with system metrics)")
@@ -52,9 +52,7 @@ func (a *Agent) Run(ctx context.Context) error {
 				status = &models.Status{}
 			}
 
-			// Collect System Metrics
-			sysInfo := a.collectSystemInfo()
-			status.System = sysInfo
+			status.System = a.collectSystemInfo()
 
 			event := models.StatusEvent{
 				ServerID: a.serverID,
@@ -85,7 +83,6 @@ func (a *Agent) collectSystemInfo() models.SystemInfo {
 	if c, err := cpu.Counts(true); err == nil {
 		info.CPUCount = c
 	}
-
 	if p, err := cpu.Percent(0, false); err == nil && len(p) > 0 {
 		info.CPUPercent = p[0]
 	}
@@ -106,10 +103,22 @@ func (a *Agent) collectSystemInfo() models.SystemInfo {
 		info.LoadAverage = l.Load1
 	}
 
-	if n, err := net.IOCounters(false); err == nil && len(n) > 0 {
+	if n, err := gopsnet.IOCounters(false); err == nil && len(n) > 0 {
 		info.NetBytesSent = n[0].BytesSent
 		info.NetBytesRecv = n[0].BytesRecv
 	}
 
+	info.PingLatencyMs = measurePing()
+
 	return info
+}
+
+func measurePing() float64 {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", "172.17.0.1:8080", 3*time.Second)
+	if err != nil {
+		return -1
+	}
+	conn.Close()
+	return float64(time.Since(start).Microseconds()) / 1000.0
 }
