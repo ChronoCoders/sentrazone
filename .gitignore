@@ -39,3 +39,28 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+backend/vpn-ui
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Backups
+*.backup
+
+# IDEs
+.vscode/
+.idea/
+
+# Vendor
+vendor/
+backups/
